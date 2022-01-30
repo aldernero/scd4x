@@ -11,7 +11,7 @@ Once the sensor has started periodic measurements, it automatically records new 
 
 ## Example CLI Monitor
 
-The `example_monitor.go` provides a similar CLI monitor with syntax similar to other CLI tools like `iostat` and `vmstat`. 
+The `example_monitor.go` provides a simple CLI monitor with syntax similar to other CLI tools like `iostat` and `vmstat`. 
 
 ### Installation
 
