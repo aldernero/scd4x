@@ -43,14 +43,14 @@ var MeasureCommand = Command{
 var mu sync.Mutex
 
 type SensorData struct {
-	co2  uint16  // CO2 in ppm
-	temp float64 // Temperature in degrees C
-	rh   float64 // Relative humidity in %
+	CO2  uint16  // CO2 in ppm
+	Temp float64 // Temperature in degrees C
+	Rh   float64 // Relative humidity in %
 }
 
 type SCD4x struct {
 	dev           *i2c.Dev
-	useFahrenheit bool
+	UseFahrenheit bool
 }
 
 type Command struct {
@@ -75,7 +75,7 @@ func (r Response) GetData() uint16 {
 
 func SensorInit(b i2c.Bus, fahrenheit bool) (*SCD4x, error) {
 	dev := &i2c.Dev{Addr: SensorAddr, Bus: b}
-	return &SCD4x{dev: dev, useFahrenheit: fahrenheit}, nil
+	return &SCD4x{dev: dev, UseFahrenheit: fahrenheit}, nil
 }
 
 func (sensor SCD4x) StartMeasurements() error {
@@ -111,12 +111,12 @@ func (sensor SCD4x) ReadMeasurement() (SensorData, error) {
 		}
 	}
 	result = SensorData{
-		co2:  resp[0].GetData(),
-		temp: -45 + 175*float64(resp[1].GetData())/65536,
-		rh:   100 * float64(resp[2].GetData()) / 65536,
+		CO2:  resp[0].GetData(),
+		Temp: -45 + 175*float64(resp[1].GetData())/65536,
+		Rh:   100 * float64(resp[2].GetData()) / 65536,
 	}
-	if sensor.useFahrenheit {
-		result.temp = celsius2Fahreheit(result.temp)
+	if sensor.UseFahrenheit {
+		result.Temp = celsius2Fahreheit(result.Temp)
 	}
 	return result, nil
 }
