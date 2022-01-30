@@ -18,11 +18,12 @@ func main() {
 	var count int
 	useFahrenheit := flag.Bool("f", false, "Use degrees Fahrenheit (default: Celsius)")
 	verboseOutput := flag.Bool("v", false, "Verbose output")
-	flag.Parse()
+	doInit := flag.Bool("init", false, "Get sensor in state ready for measurements.")
 	flag.Usage = func() {
 		fmt.Printf("Usage: \n %s [options] [delay [count]]\n", os.Args[0])
 		flag.PrintDefaults()
 	}
+	flag.Parse()
 	// Parse delay
 	if flag.NArg() > 0 {
 		arg, err := strconv.Atoi(flag.Arg(0))
@@ -58,10 +59,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if *doInit {
+		fmt.Print("Initializing:...")
+		if err := sensor.StopMeasurements(); err != nil {
+			log.Fatalf("Error while trying to stop periodic measurements: %v", err)
+		}
+		if err := sensor.StartMeasurements(); err != nil {
+			log.Fatalf("Error while trying to start periodic measurements: %v", err)
+		}
+		fmt.Println("done")
+	}
 	// Start measurements
 	intervals := 0
 	if *verboseOutput {
-		fmt.Println("Time                            CO2    Temp    RH")
+		fmt.Println("Time                            CO2   Temp    RH")
 	}
 	for {
 		data, err := sensor.ReadMeasurement()
