@@ -71,6 +71,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		err = sensor.StartMeasurements()
+		if err != nil {
+			log.Fatal(err)
+		}
 		fmt.Println("done")
 	}
 	// Start measurements
@@ -79,6 +83,13 @@ func main() {
 		fmt.Println("Time                            CO2   Temp    RH")
 	}
 	for {
+		dataReady, err := sensor.GetDataReady()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !dataReady {
+			log.Fatal("No data ready")
+		}
 		data, err := sensor.ReadMeasurement()
 		if err != nil {
 			log.Fatal(err)
