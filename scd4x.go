@@ -26,7 +26,7 @@ var reinitCmd = Command{
 var startCmd = Command{
 	cmd:       0x21b1,
 	respBytes: 0,
-	delay:     5500 * time.Millisecond,
+	delay:     0,
 	desc:      "start periodic measurements",
 }
 var stopCmd = Command{
@@ -107,6 +107,9 @@ func (sensor *SCD4x) Init() error {
 		return err
 	}
 	if err := sensor.sendCommand(reinitCmd); err != nil {
+		return err
+	}
+	if err := sensor.StartMeasurements(); err != nil {
 		return err
 	}
 	return nil

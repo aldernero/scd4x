@@ -67,11 +67,9 @@ func main() {
 	}
 	if *doInit {
 		fmt.Print("Initializing:...")
-		if err := sensor.StopMeasurements(); err != nil {
-			log.Fatalf("Error while trying to stop periodic measurements: %v", err)
-		}
-		if err := sensor.StartMeasurements(); err != nil {
-			log.Fatalf("Error while trying to start periodic measurements: %v", err)
+		err := sensor.Init()
+		if err != nil {
+			log.Fatal(err)
 		}
 		fmt.Println("done")
 	}
