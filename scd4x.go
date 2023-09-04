@@ -11,9 +11,9 @@ import (
 
 // These should not change but check data sheet if in doubt
 const (
-	SensorAddr           = 0x62
-	Crc8Polynomial uint8 = 0x31
-	Crc8Init       uint8 = 0xff
+	SensorAddr     uint16 = 0x62
+	Crc8Polynomial uint8  = 0x31
+	Crc8Init       uint8  = 0xff
 )
 
 // Supported commands
@@ -70,8 +70,9 @@ type SensorData struct {
 }
 
 type SCD4x struct {
-	dev *i2c.Dev
-	//data          SensorData
+	dev           *i2c.Dev
+	data          SensorData
+	debug         bool
 	UseFahrenheit bool
 }
 
@@ -100,7 +101,7 @@ func NewSensor(b i2c.Bus, fahrenheit bool) (*SCD4x, error) {
 	return &SCD4x{dev: dev, UseFahrenheit: fahrenheit}, nil
 }
 
-func (sensor *SCD4x) Init() error {
+func (sensor SCD4x) Init() error {
 	mu.Lock()
 	defer mu.Unlock()
 	if err := sensor.StopMeasurements(); err != nil {
@@ -115,7 +116,7 @@ func (sensor *SCD4x) Init() error {
 	return nil
 }
 
-func (sensor *SCD4x) StartMeasurements() error {
+func (sensor SCD4x) StartMeasurements() error {
 	//mu.Lock()
 	//defer mu.Unlock()
 	if err := sensor.sendCommand(startCmd); err != nil {
@@ -124,7 +125,7 @@ func (sensor *SCD4x) StartMeasurements() error {
 	return nil
 }
 
-func (sensor *SCD4x) StopMeasurements() error {
+func (sensor SCD4x) StopMeasurements() error {
 	//mu.Lock()
 	//defer mu.Unlock()
 	if err := sensor.sendCommand(stopCmd); err != nil {
@@ -133,7 +134,7 @@ func (sensor *SCD4x) StopMeasurements() error {
 	return nil
 }
 
-func (sensor *SCD4x) ReadMeasurement() (SensorData, error) {
+func (sensor SCD4x) ReadMeasurement() (SensorData, error) {
 	//mu.Lock()
 	//defer mu.Unlock()
 	var result SensorData
@@ -158,7 +159,7 @@ func (sensor *SCD4x) ReadMeasurement() (SensorData, error) {
 	return result, nil
 }
 
-func (sensor *SCD4x) GetTemperatureOffset() (float64, error) {
+func (sensor SCD4x) GetTemperatureOffset() (float64, error) {
 	//mu.Lock()
 	//defer mu.Unlock()
 	resp, err := sensor.readCommand(temperatureOffsetCmd)
@@ -171,7 +172,7 @@ func (sensor *SCD4x) GetTemperatureOffset() (float64, error) {
 	return -45 + 175*float64(resp[0].GetData())/65536, nil
 }
 
-func (sensor *SCD4x) GetSensorAltitude() (uint16, error) {
+func (sensor SCD4x) GetSensorAltitude() (uint16, error) {
 	//mu.Lock()
 	//defer mu.Unlock()
 	resp, err := sensor.readCommand(sensorAltitudeCmd)
@@ -184,7 +185,7 @@ func (sensor *SCD4x) GetSensorAltitude() (uint16, error) {
 	return resp[0].GetData(), nil
 }
 
-func (sensor *SCD4x) GetAmbientPressure() (uint16, error) {
+func (sensor SCD4x) GetAmbientPressure() (uint16, error) {
 	//mu.Lock()
 	//defer mu.Unlock()
 	resp, err := sensor.readCommand(ambientPressureCmd)
@@ -217,7 +218,7 @@ func celsius2Fahreheit(degrees float64) float64 {
 	return 1.8*degrees + 32
 }
 
-func (sensor *SCD4x) sendCommand(cmd Command) error {
+func (sensor SCD4x) sendCommand(cmd Command) error {
 	c := make([]byte, 2)
 	binary.BigEndian.PutUint16(c, cmd.cmd)
 	if err := sensor.dev.Tx(c, nil); err != nil {
@@ -229,7 +230,7 @@ func (sensor *SCD4x) sendCommand(cmd Command) error {
 	return nil
 }
 
-func (sensor *SCD4x) readCommand(cmd Command) ([]Response, error) {
+func (sensor SCD4x) readCommand(cmd Command) ([]Response, error) {
 	c := make([]byte, 2)
 	r := make([]byte, cmd.respBytes)
 	binary.BigEndian.PutUint16(c, cmd.cmd)
