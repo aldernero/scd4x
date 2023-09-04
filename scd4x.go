@@ -121,6 +121,45 @@ func (sensor SCD4x) ReadMeasurement() (SensorData, error) {
 	return result, nil
 }
 
+func (sensor SCD4x) GetTemperatureOffset() (float64, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	resp, err := sensor.readCommand(Command{cmd: 0x2318, respBytes: 3, delay: 2, desc: "read temperature offset"})
+	if err != nil {
+		return 0, err
+	}
+	if !resp[0].CrcMatch() {
+		return 0, fmt.Errorf("temperature offset CRC mismatch")
+	}
+	return -45 + 175*float64(resp[0].GetData())/65536, nil
+}
+
+func (sensor SCD4x) GetSensorAltitude() (uint16, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	resp, err := sensor.readCommand(Command{cmd: 0x2322, respBytes: 3, delay: 2, desc: "read sensor altitude compensation"})
+	if err != nil {
+		return 0, err
+	}
+	if !resp[0].CrcMatch() {
+		return 0, fmt.Errorf("sensor altitude compensation CRC mismatch")
+	}
+	return resp[0].GetData(), nil
+}
+
+func (sensor SCD4x) GetAmbientPressure() (uint16, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	resp, err := sensor.readCommand(Command{cmd: 0xe000, respBytes: 3, delay: 2, desc: "read ambient pressure compensation"})
+	if err != nil {
+		return 0, err
+	}
+	if !resp[0].CrcMatch() {
+		return 0, fmt.Errorf("ambient pressure compensation CRC mismatch")
+	}
+	return resp[0].GetData(), nil
+}
+
 // Adapted from the C/C++ example in the SDC4x data sheet
 func crc8(data []byte, count uint16) byte {
 	crc := CRC8_INIT

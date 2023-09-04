@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"periph.io/x/conn/v3/i2c"
 	"strconv"
 	"time"
 
@@ -54,7 +55,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed while opening bus: %v", err)
 	}
-	defer bus.Close()
+	defer func(bus i2c.BusCloser) {
+		err := bus.Close()
+		if err != nil {
+			log.Fatal("Failed to close bus: ", err)
+		}
+	}(bus)
 	sensor, err := scd4x.SensorInit(bus, *useFahrenheit)
 	if err != nil {
 		log.Fatal(err)
