@@ -5,10 +5,15 @@ import (
 	"log"
 	"periph.io/x/conn/v3/i2c"
 	"periph.io/x/conn/v3/i2c/i2creg"
+	"periph.io/x/host/v3"
 )
 
 func main() {
 	// Prepare I2C bus
+	_, err := host.Init()
+	if err != nil {
+		log.Fatalf("Failed to initialize periph: %v", err)
+	}
 	bus, err := i2creg.Open("")
 	if err != nil {
 		log.Fatalf("Failed while opening bus: %v", err)
