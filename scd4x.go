@@ -116,8 +116,8 @@ func (sensor *SCD4x) Init() error {
 }
 
 func (sensor *SCD4x) StartMeasurements() error {
-	mu.Lock()
-	defer mu.Unlock()
+	//mu.Lock()
+	//defer mu.Unlock()
 	if err := sensor.sendCommand(startCmd); err != nil {
 		return err
 	}
@@ -125,8 +125,8 @@ func (sensor *SCD4x) StartMeasurements() error {
 }
 
 func (sensor *SCD4x) StopMeasurements() error {
-	mu.Lock()
-	defer mu.Unlock()
+	//mu.Lock()
+	//defer mu.Unlock()
 	if err := sensor.sendCommand(stopCmd); err != nil {
 		return err
 	}
@@ -134,8 +134,8 @@ func (sensor *SCD4x) StopMeasurements() error {
 }
 
 func (sensor *SCD4x) ReadMeasurement() (SensorData, error) {
-	mu.Lock()
-	defer mu.Unlock()
+	//mu.Lock()
+	//defer mu.Unlock()
 	var result SensorData
 	resp, err := sensor.readCommand(measureCmd)
 	if err != nil {
@@ -144,7 +144,7 @@ func (sensor *SCD4x) ReadMeasurement() (SensorData, error) {
 	// check CRCs
 	for _, r := range resp {
 		if !r.CrcMatch() {
-			return result, fmt.Errorf("measuerment CRC mismatch")
+			return result, fmt.Errorf("measurement CRC mismatch")
 		}
 	}
 	result = SensorData{
@@ -159,8 +159,8 @@ func (sensor *SCD4x) ReadMeasurement() (SensorData, error) {
 }
 
 func (sensor *SCD4x) GetTemperatureOffset() (float64, error) {
-	mu.Lock()
-	defer mu.Unlock()
+	//mu.Lock()
+	//defer mu.Unlock()
 	resp, err := sensor.readCommand(temperatureOffsetCmd)
 	if err != nil {
 		return 0, err
@@ -172,8 +172,8 @@ func (sensor *SCD4x) GetTemperatureOffset() (float64, error) {
 }
 
 func (sensor *SCD4x) GetSensorAltitude() (uint16, error) {
-	mu.Lock()
-	defer mu.Unlock()
+	//mu.Lock()
+	//defer mu.Unlock()
 	resp, err := sensor.readCommand(sensorAltitudeCmd)
 	if err != nil {
 		return 0, err
@@ -185,8 +185,8 @@ func (sensor *SCD4x) GetSensorAltitude() (uint16, error) {
 }
 
 func (sensor *SCD4x) GetAmbientPressure() (uint16, error) {
-	mu.Lock()
-	defer mu.Unlock()
+	//mu.Lock()
+	//defer mu.Unlock()
 	resp, err := sensor.readCommand(ambientPressureCmd)
 	if err != nil {
 		return 0, err
