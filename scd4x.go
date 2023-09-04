@@ -32,7 +32,7 @@ var startCmd = Command{
 var stopCmd = Command{
 	cmd:       0x3f86,
 	respBytes: 0,
-	delay:     550 * time.Millisecond,
+	delay:     500 * time.Millisecond,
 	desc:      "stop periodic measurements",
 }
 var measureCmd = Command{
@@ -44,20 +44,26 @@ var measureCmd = Command{
 var temperatureOffsetCmd = Command{
 	cmd:       0x2318,
 	respBytes: 3,
-	delay:     2 * time.Millisecond,
+	delay:     1 * time.Millisecond,
 	desc:      "read temperature offset",
 }
 var sensorAltitudeCmd = Command{
 	cmd:       0x2322,
 	respBytes: 3,
-	delay:     2 * time.Millisecond,
+	delay:     1 * time.Millisecond,
 	desc:      "read sensor altitude compensation",
 }
 var ambientPressureCmd = Command{
 	cmd:       0xe000,
 	respBytes: 3,
-	delay:     2 * time.Millisecond,
+	delay:     1 * time.Millisecond,
 	desc:      "read ambient pressure compensation",
+}
+var getDataReadyCmd = Command{
+	cmd:       0xe4b8,
+	respBytes: 3,
+	delay:     1 * time.Millisecond,
+	desc:      "check if data is ready",
 }
 
 // The sensor can't handle mulitple commands at once
@@ -108,9 +114,6 @@ func (sensor SCD4x) Init() error {
 		return err
 	}
 	if err := sensor.sendCommand(reinitCmd); err != nil {
-		return err
-	}
-	if err := sensor.StartMeasurements(); err != nil {
 		return err
 	}
 	return nil
@@ -196,6 +199,21 @@ func (sensor SCD4x) GetAmbientPressure() (uint16, error) {
 		return 0, fmt.Errorf("ambient pressure compensation CRC mismatch")
 	}
 	return resp[0].GetData(), nil
+}
+
+func (sensor SCD4x) GetDataReady() (bool, error) {
+	//mu.Lock()
+	//defer mu.Unlock()
+	resp, err := sensor.readCommand(getDataReadyCmd)
+	if err != nil {
+		return false, err
+	}
+	if !resp[0].CrcMatch() {
+		return false, fmt.Errorf("data ready CRC mismatch")
+	}
+	// look at 11 least significant bits
+	bits := resp[0].GetData() & 0x07ff
+	return bits != 0, nil
 }
 
 // Adapted from the C/C++ example in the SDC4x data sheet
