@@ -25,7 +25,7 @@ func main() {
 		}
 	}(bus)
 	// Initialize sensor
-	sensor, err := scd4x.SensorInit(bus, false)
+	sensor, err := scd4x.NewSensor(bus, false)
 	if err != nil {
 		log.Fatal("Failed to initialize sensor: ", err)
 	}

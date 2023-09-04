@@ -17,6 +17,12 @@ const (
 )
 
 // Supported commands
+var reinitCmd = Command{
+	cmd:       0x3646,
+	respBytes: 0,
+	delay:     30 * time.Millisecond,
+	desc:      "reinitialize sensor",
+}
 var startCmd = Command{
 	cmd:       0x21b1,
 	respBytes: 0,
@@ -89,9 +95,21 @@ func (r Response) GetData() uint16 {
 	return binary.BigEndian.Uint16(r.data)
 }
 
-func SensorInit(b i2c.Bus, fahrenheit bool) (*SCD4x, error) {
+func NewSensor(b i2c.Bus, fahrenheit bool) (*SCD4x, error) {
 	dev := &i2c.Dev{Addr: SensorAddr, Bus: b}
 	return &SCD4x{dev: dev, UseFahrenheit: fahrenheit}, nil
+}
+
+func (sensor *SCD4x) Init() error {
+	mu.Lock()
+	defer mu.Unlock()
+	if err := sensor.StopMeasurements(); err != nil {
+		return err
+	}
+	if err := sensor.sendCommand(reinitCmd); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (sensor *SCD4x) StartMeasurements() error {

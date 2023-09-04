@@ -61,7 +61,7 @@ func main() {
 			log.Fatal("Failed to close bus: ", err)
 		}
 	}(bus)
-	sensor, err := scd4x.SensorInit(bus, *useFahrenheit)
+	sensor, err := scd4x.NewSensor(bus, *useFahrenheit)
 	if err != nil {
 		log.Fatal(err)
 	}
