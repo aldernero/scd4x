@@ -29,6 +29,10 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to initialize sensor: ", err)
 	}
+	err = sensor.Init()
+	if err != nil {
+		log.Fatalf("Failed to initialize sensor: %v", err)
+	}
 	// Get temperature offset
 	tempOffset, err := sensor.GetTemperatureOffset()
 	if err != nil {

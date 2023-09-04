@@ -70,8 +70,8 @@ type SensorData struct {
 }
 
 type SCD4x struct {
-	dev           *i2c.Dev
-	data          SensorData
+	dev *i2c.Dev
+	//data          SensorData
 	UseFahrenheit bool
 }
 
