@@ -255,10 +255,12 @@ func (sensor SCD4x) readCommand(cmd Command) ([]Response, error) {
 	if err := sensor.dev.Tx(c, r); err != nil {
 		return nil, fmt.Errorf("error while %s: %v", cmd.desc, err)
 	}
-	resp := make([]Response, int(cmd.respBytes)-2)
+
+	resp := []Response{}
 	for i := 0; i < int(cmd.respBytes)-2; i += 3 {
 		j := Response{data: r[i : i+2], crc: r[i+2]}
-		resp[i] = j
+		resp = append(resp, j)
+
 	}
 	if cmd.delay > 0 {
 		time.Sleep(cmd.delay)
