@@ -153,8 +153,8 @@ func (sensor SCD4x) ReadMeasurement() (SensorData, error) {
 	}
 	result = SensorData{
 		CO2:  resp[0].GetData(),
-		Temp: -45 + 175*float64(resp[1].GetData())/65536,
-		Rh:   100 * float64(resp[2].GetData()) / 65536,
+		Temp: -45 + 175*float64(resp[1].GetData())/65535,
+		Rh:   100 * float64(resp[2].GetData()) / 65535,
 	}
 	if sensor.UseFahrenheit {
 		result.Temp = celsius2Fahreheit(result.Temp)
@@ -172,7 +172,7 @@ func (sensor SCD4x) GetTemperatureOffset() (float64, error) {
 	if !resp[0].CrcMatch() {
 		return 0, fmt.Errorf("temperature offset CRC mismatch")
 	}
-	return -45 + 175*float64(resp[0].GetData())/65536, nil
+	return -45 + 175*float64(resp[0].GetData())/65535, nil
 }
 
 func (sensor SCD4x) GetSensorAltitude() (uint16, error) {
