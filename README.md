@@ -1,59 +1,54 @@
 # scd4x
-A Go module for reading CO2, temperature, and humidity data from the Sesirion SCD4x family of sensors. Example sensors are the [Adafruit SCD-40 and Adafruit SCD-41](https://learn.adafruit.com/adafruit-scd-40-and-scd-41). The former was used during the development of this module.
+
+A Go module for reading CO2, temperature, and humidity data from the Sensirion SCD4x family of sensors. Example sensors are the [Adafruit SCD-40 and Adafruit SCD-41](https://learn.adafruit.com/adafruit-scd-40-and-scd-41).
 
 ## Scope
-The module implements the following sensor functions through an i2c bus:
-- Starting periodic measurements
-- Reading the current sensor values
-- Stopping periodic measurements
 
-Once the sensor has started periodic measurements, it automatically records new sensor data every 5 seconds into its internal buffer. A `ReadMeasurement` call retrieves the most recent sensor data from SCD4x.
+The module implements the SCD4x I²C command set from the product datasheet:
 
-## Example CLI Monitor
+| Domain | Commands |
+| --- | --- |
+| Basic | start/stop periodic measurement, read measurement, data ready |
+| Signal compensation | get/set temperature offset, altitude, ambient pressure |
+| Field calibration | forced recalibration (FRC), ASC enable/target |
+| Low power | low-power periodic measurement |
+| Advanced | persist settings, serial number, self-test, factory reset, reinit, sensor variant |
+| Single-shot (SCD41/SCD43) | measure single shot, RHT-only, power down / wake up, ASC periods |
 
-The `example_monitor.go` provides a simple CLI monitor with syntax similar to other CLI tools like `iostat` and `vmstat`. 
+Once periodic measurement is running, new samples are available every 5 seconds (or 30 seconds in low-power mode). Call `GetDataReady` / `WaitForDataReady` before `ReadMeasurement`.
 
-### Installation
+The SCD4x draws brief peak currents up to ~200 mA when the IR source fires. Use a supply that can handle that (datasheet recommends a dedicated LDO); an under-powered rail will look like “start works, then data never becomes ready.”
 
-Clone this repository and navigate to the `examples/` directory. Then build with go.
-```
-go build example_monitor.go
-```
-You should now have an executable file called `example_monitor`
-
-### Syntax
+## Example CLI monitor
 
 ```
-pi@sliceofpi:~/scd4x/examples $ ./example_monitor -h
+cd examples/monitor
+go build -o example_monitor .
+./example_monitor -h
+```
+
+```
 Usage:
  ./example_monitor [options] [delay [count]]
+  -bus string
+    	I²C bus name (default: first available; try /dev/i2c-1)
   -f	Use degrees Fahrenheit (default: Celsius)
   -init
-    	Get sensor in state ready for measurements.
+    	Stop, reinit, and start periodic measurements
   -v	Verbose output
 ```
-Like other system tools, `delay` is the number of seconds to wait between measurements, and `count` is the total number of measurements to take. Both field are optional. Not specifying the delay will take one measurement and exit. Specifying a delay but not a count will run the monitor indefinitely, until it receives an interrupt (e.g. Ctrl+C).
 
-If you're not sure what state the sensor is in, i.e. whether its in an idle state or already in a periodic measurement state, you can use the `--init` flag, which will issue a `StopMeasurement` followed by a `StartMeasurement` command. The `--init` operation takes about 7 seconds to complete. You should only ever need to use the flag once.
+`delay` is seconds between samples (minimum 5). `count` is how many samples to take. Omit both for a single sample. Use `-init` if you are unsure whether the sensor is already measuring.
 
 ### Output
-Verbose output:
+
+Verbose:
 ```
-pi@sliceofpi:~/scd4x/examples $ ./example_monitor -f -v 10
 Time                            CO2   Temp    RH
 [2022-01-30T10:31:10-07:00]  801ppm 71.0*F 18.9%
-[2022-01-30T10:31:20-07:00]  782ppm 70.9*F 19.0%
-[2022-01-30T10:31:30-07:00]  780ppm 70.9*F 19.0%
-[2022-01-30T10:31:40-07:00]  780ppm 70.9*F 18.9%
-[2022-01-30T10:31:50-07:00]  780ppm 70.9*F 18.9%
 ```
-Minimal output:
+
+Minimal:
 ```
-pi@sliceofpi:~/scd4x/examples $ ./example_monitor -f 10
 665 71.0 18.1
-665 71.0 18.1
-663 71.0 18.0
-663 71.0 18.0
-663 71.0 18.0
-663 71.1 18.0
 ```

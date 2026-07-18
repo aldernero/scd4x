@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"periph.io/x/conn/v3/i2c"
 	"strconv"
 	"time"
 
 	"github.com/aldernero/scd4x"
+	"periph.io/x/conn/v3/i2c"
 	"periph.io/x/conn/v3/i2c/i2creg"
 	"periph.io/x/host/v3"
 )
@@ -19,13 +19,14 @@ func main() {
 	var count int
 	useFahrenheit := flag.Bool("f", false, "Use degrees Fahrenheit (default: Celsius)")
 	verboseOutput := flag.Bool("v", false, "Verbose output")
-	doInit := flag.Bool("init", false, "Get sensor in state ready for measurements.")
+	doInit := flag.Bool("init", false, "Stop, reinit, and start periodic measurements")
+	busName := flag.String("bus", "", "I²C bus name (default: first available; try /dev/i2c-1)")
 	flag.Usage = func() {
-		fmt.Printf("Usage: \n %s [options] [delay [count]]\n", os.Args[0])
+		fmt.Printf("Usage:\n %s [options] [delay [count]]\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-	// Parse delay
+
 	if flag.NArg() > 0 {
 		arg, err := strconv.Atoi(flag.Arg(0))
 		if err != nil {
@@ -36,59 +37,54 @@ func main() {
 		}
 		delay = arg
 	}
-	// Parse count
 	if flag.NArg() > 1 {
 		arg, err := strconv.Atoi(flag.Arg(1))
 		if err != nil {
 			log.Fatal("Incorrect value for count")
 		}
 		if arg < 1 {
-			log.Fatal("Delay must be at least 1")
+			log.Fatal("Count must be at least 1")
 		}
 		count = arg
 	}
-	_, err := host.Init()
-	if err != nil {
+
+	if _, err := host.Init(); err != nil {
 		log.Fatalf("Failed to initialize periph: %v", err)
 	}
-	bus, err := i2creg.Open("")
+	bus, err := i2creg.Open(*busName)
 	if err != nil {
 		log.Fatalf("Failed while opening bus: %v", err)
 	}
 	defer func(bus i2c.BusCloser) {
-		err := bus.Close()
-		if err != nil {
+		if err := bus.Close(); err != nil {
 			log.Fatal("Failed to close bus: ", err)
 		}
 	}(bus)
+
 	sensor, err := scd4x.NewSensor(bus, *useFahrenheit)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if *doInit {
-		fmt.Print("Initializing:...")
-		err := sensor.Init()
-		if err != nil {
+		fmt.Print("Initializing...")
+		if err := sensor.Init(); err != nil {
 			log.Fatal(err)
 		}
-		err = sensor.StartMeasurements()
-		if err != nil {
+		if err := sensor.StartMeasurements(); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("done")
 	}
-	// Start measurements
+
 	intervals := 0
+	var next time.Time
 	if *verboseOutput {
 		fmt.Println("Time                            CO2   Temp    RH")
 	}
 	for {
-		dataReady, err := sensor.GetDataReady()
-		if err != nil {
+		// Allow extra time for the first sample after start (5s update interval).
+		if err := sensor.WaitForDataReady(15 * time.Second); err != nil {
 			log.Fatal(err)
-		}
-		if !dataReady {
-			log.Fatal("No data ready")
 		}
 		data, err := sensor.ReadMeasurement()
 		if err != nil {
@@ -105,15 +101,18 @@ func main() {
 		} else {
 			fmt.Printf("%d %.1f %.1f\n", data.CO2, data.Temp, data.Rh)
 		}
-		if delay == 0 {
+		intervals++
+		if delay == 0 || (count > 0 && intervals >= count) {
 			break
 		}
-		if count > 0 {
-			intervals++
+		// Pace output to the requested delay without missing the next ready sample.
+		if next.IsZero() {
+			next = now.Add(time.Duration(delay) * time.Second)
+		} else {
+			next = next.Add(time.Duration(delay) * time.Second)
 		}
-		if intervals > count {
-			break
+		if wait := time.Until(next); wait > 0 {
+			time.Sleep(wait)
 		}
-		time.Sleep(time.Duration(delay) * time.Second)
 	}
 }
