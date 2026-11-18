@@ -10,6 +10,7 @@ all: build test
 
 build:
 	go build -o $(EXAMPLE_BIN) ./$(EXAMPLE_DIR)
+	go build -o scd4x ./cmd/scd4x
 
 test:
 	go test ./...
@@ -18,4 +19,4 @@ lint:
 	golangci-lint run ./...
 
 clean:
-	rm -f $(EXAMPLE_BIN)
+	rm -f $(EXAMPLE_BIN) scd4x

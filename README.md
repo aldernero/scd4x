@@ -19,6 +19,32 @@ Once periodic measurement is running, new samples are available every 5 seconds 
 
 The SCD4x draws brief peak currents up to ~200 mA when the IR source fires. Use a supply that can handle that (datasheet recommends a dedicated LDO); an under-powered rail will look like “start works, then data never becomes ready.”
 
+## `scd4x` configuration CLI
+
+```
+go build -o scd4x ./cmd/scd4x
+./scd4x help
+```
+
+Every sensor command is available as a subcommand (`-bus` selects the I²C bus):
+
+| Command | Description |
+| --- | --- |
+| `info` | variant, serial number and all settings |
+| `serial`, `variant` | get serial number / sensor variant |
+| `temp-offset [°C]` | get/set temperature offset |
+| `altitude [m]` | get/set sensor altitude |
+| `pressure [Pa]` | get/set ambient pressure |
+| `frc <ppm>` | forced recalibration against a reference concentration |
+| `self-test` | on-chip self test (~10 s) |
+| `asc [on\|off]`, `asc-target [ppm]` | automatic self calibration |
+| `asc-initial-period`, `asc-standard-period [hours]` | ASC periods (SCD41/43) |
+| `persist`, `reinit`, `factory-reset -y` | EEPROM save / reload / reset |
+| `start [-low-power]`, `stop` | periodic measurement |
+| `single-shot [-rht-only]`, `power-down`, `wake-up` | SCD41/43 single-shot mode |
+
+Commands that need the sensor idle stop periodic measurement first, so run `start` afterwards. Setters are volatile until you run `persist`, or pass `-persist` (e.g. `scd4x -persist temp-offset 4`) to save right after a successful set. `-persist` applies to `temp-offset`, `altitude`, `asc`, `asc-target` and the ASC periods; ambient pressure is never stored in EEPROM. Use `examples/monitor` to read measurements.
+
 ## Example CLI monitor
 
 ```

@@ -2,3 +2,7 @@
 
 # Example binaries
 examples/monitor/example_monitor
+/scd4x
+
+# JetBrains IDE
+.idea/
